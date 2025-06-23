@@ -1,24 +1,34 @@
 from PIL import Image
-
 from image_utils import pad_image, split_image
+import os
 
-image_name = '2025-05-21-18-55-05.png'
-image = Image.open(f"./screenshots/{image_name}")
+# Specify folder containing raw images
+foldername = "./screenshots/test_set_1"
+
+# Iterate over images in foldername
+for image in os.listdir(foldername):
+    
+    image_obj = Image.open(os.path.join(foldername, image))
+
+    left_image, right_image = split_image(image_obj)
+    left_image = left_image.resize((392, 392), Image.BICUBIC)
+    right_image = right_image.resize((392, 392), Image.BICUBIC)
+
+    if not os.path.exists(os.path.join(foldername, "left")):
+        os.makedirs(os.path.join(foldername, "left"))
+    if not os.path.exists(os.path.join(foldername, "right")):
+        os.makedirs(os.path.join(foldername, "right"))
+
+    left_image.save(os.path.join(foldername,f"left/left-{image}"))
+    right_image.save(os.path.join(foldername,f"right/right-{image}"))
 
 
-left_image, right_image = split_image(image)
-left_image = left_image.resize((480, 480), Image.BICUBIC)
-right_image = right_image.resize((480, 480), Image.BICUBIC)
-left_image.save(f"./screenshots/left-{image_name}")
-right_image.save(f"./screenshots/right-{image_name}")
 
+# image = pad_image(image)
 
+# # Resize with bicubic interpolation
+# image = image.resize((392, 392), Image.BICUBIC)
 
-image = pad_image(image)
-
-# Resize with bicubic interpolation
-image = image.resize((480, 480), Image.BICUBIC)
-
-image.save(f"./screenshots/padded-{image_name}")
+# image.save(f"./screenshots/padded-{image_name}")
 
 
