@@ -1,4 +1,4 @@
-from classifier import TerminationClassifier
+from dinoproof.classifier import TerminationClassifier
 import torch
 import time
 
@@ -8,7 +8,7 @@ if __name__ == "__main__":
     model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
 
     output_dir = "weights/" + time.strftime("%Y-%m-%d-%H-%M-%S")
-    input_dir = "./screenshots/raw_1_augmented"
+    input_dir = "./screenshots/raw_1_false_positive_augmented"
 
     num_epochs = 10
     learning_rate = 0.001

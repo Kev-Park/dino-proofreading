@@ -1,5 +1,5 @@
 import torch
-from classifier import TerminationClassifier
+from dinoproof.classifier import TerminationClassifier
 import matplotlib.pyplot as plt
 import numpy as np
 from torchvision import transforms
@@ -10,9 +10,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 classifier = TerminationClassifier(feature_dim=384)
 
-dataset_name = "raw_1_augmented"
-test_file = "right-2025-06-13-23-29-30_0"
-weights_path = "2025-06-23-15-17-31/model_epoch_10"
+dataset_name = "false_positive_augmented"
+test_file = "right-2025-06-26-21-07-29_180"
+weights_path = "linear_false_positive/model_epoch_10"
 
 classifier.load_state_dict(torch.load(f"./weights/{weights_path}.pth"))
 classifier.eval().to(device)
@@ -45,19 +45,19 @@ with torch.no_grad():
     model_heatmap = classifier.forward(features)
 
 # Get real heatmap
-real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
+#real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
 
 # Visualize
 plt.figure(figsize=(10, 5))
 
 plt.subplot(1, 2, 1)
-plt.imshow(np.array(Image.open(f"./screenshots/raw_1_augmented/{test_file}.png").convert("RGB")))
-plt.imshow(real_heatmap, alpha=0.5, cmap="jet")
+plt.imshow(np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB")))
+#plt.imshow(real_heatmap, alpha=0.5, cmap="jet")
 plt.title("Ground Truth Heatmap")
 plt.axis("off")
 
 plt.subplot(1, 2, 2)
-plt.imshow(np.array(Image.open(f"./screenshots/raw_1_augmented/{test_file}.png").convert("RGB")))
+plt.imshow(np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB")))
 plt.imshow(model_heatmap.cpu().squeeze(), alpha=0.5, cmap="jet")
 plt.title("Model Predicted Heatmap")
 plt.axis("off")

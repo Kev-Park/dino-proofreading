@@ -1,9 +1,9 @@
 from PIL import Image
-from image_utils import pad_image, split_image
+from dinoproof.utils.image_utils import pad_image, split_image
 import os
 
 # Specify folder containing raw images
-foldername = "./screenshots/test_set_1"
+foldername = "./screenshots/false_positive"
 
 # Iterate over images in foldername
 for image in os.listdir(foldername):

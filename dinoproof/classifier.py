@@ -12,19 +12,31 @@ class TerminationClassifier(nn.Module):
 
         self.size = 392  # Size of the input images
 
+        # Nonlinear
+        # self.model = nn.Sequential(
+        #     nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1),  # 384 -> 64
+        #     nn.ReLU(),
+        #     nn.Conv2d(64, 32, kernel_size=3, padding=1), # 64 -> 32
+        #     nn.ReLU(),
+        #     nn.Conv2d(32, 1, kernel_size=1) # 32 -> 1
+        # )
+
+        # Linear
         self.model = nn.Sequential(
-            nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1),  # Local context
-            nn.ReLU(),
-            nn.Conv2d(64, 32, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(32, 1, kernel_size=1)  # Final output logits
+            nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1, bias=True),  # 384 -> 64
+            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), # 64 -> 32
+            nn.Conv2d(32, 1, kernel_size=1, bias=True) # 32 -> 1
         )
 
     def forward(self, feature_grid):
         return self.model(feature_grid).squeeze(1)
 
     def extract_points(self, csv_path):
-        data = np.loadtxt(csv_path, delimiter=',', skiprows=1)
+        try:
+            data = np.loadtxt(csv_path, delimiter=',', skiprows=1)
+        except:
+            # Return empty array if file not found or empty
+            data = np.empty((0, 2))
         return data
 
     def generate_heatmap(self, points):

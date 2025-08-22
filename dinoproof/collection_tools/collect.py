@@ -11,7 +11,8 @@ options = {
 
 env = Environment(headless=False, config_path="config.json", verbose=False)
 
-env.start_session(**options)
+#env.start_session(**options)
+env.start_neuroglancer_session()
 
 while True:
     cmd = input(">>> ").strip()
