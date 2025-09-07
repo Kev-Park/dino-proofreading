@@ -34,7 +34,7 @@ class TerminationClassifier(nn.Module):
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
-        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='https://dinov3.llamameta.net/dinov3_vitb16/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth?Policy=eyJTdGF0ZW1lbnQiOlt7InVuaXF1ZV9oYXNoIjoianNmYWM1OGR6d2pkc3VuejJmc3lydGwwIiwiUmVzb3VyY2UiOiJodHRwczpcL1wvZGlub3YzLmxsYW1hbWV0YS5uZXRcLyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTczODI2MDB9fX1dfQ__&Signature=K3CFz0bsU4fXyMb%7EqRUisxBOkLPfOFMrxmoI4n5hXkXdtYywpSKDOTAFQTxZZtE9kuaG6Q3gXqQRRFGHTgW9wG7RjOi4NNaPG%7ESK%7EWnZ3POkJZyItdmfgQK9%7EWm4c15wNUcrJUMkJvOAVkYJ7vRpldqOFB8ePJNXfqQF18jdTNpKlO26ADc1Q075nshgzedZHhByFD1usg1TDyqZyhUCuywCIjTyjeoWtgi3J-bOG6852i-De5TpMGUy-KL9k5Iq%7ED75n%7Ey9eqT%7EJ0%7EFc7VEkEJR60e4HgkFWbZfvNDYYQOGbM2GKD%7EfuvKOrtN5QHpTIzyDbH3S-mMLJ20sT8IQOA__&Key-Pair-Id=K15QRJLYKIFSLZ&Download-Request-ID=1112930710788675' ).eval().to(self.device)        
+        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth' ).eval().to(self.device)        
 
     def extract_points(self, csv_path):
         """
