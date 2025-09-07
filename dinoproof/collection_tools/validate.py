@@ -48,8 +48,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Visualize image with termination points overlaid.")
-    parser.add_argument("folder", type=str, help="Folder containing image and CSV.")
-    parser.add_argument("filename", type=str, help="Base filename without extension (e.g., 'image1_90')")
+    parser.add_argument("--folder", type=str, help="Folder containing image and CSV.")
+    parser.add_argument("--filename", type=str, help="Base filename without extension (e.g., 'image1_90')")
 
     args = parser.parse_args()
 

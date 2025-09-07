@@ -7,10 +7,14 @@ from torch.nn.functional import interpolate
 from PIL import Image
 
 class TerminationClassifier(nn.Module):
-    def __init__(self, feature_dim):
+    def __init__(self):
         super().__init__()
 
-        self.size = 392  # Size of the input images
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.patch_size = 16 # Default
+        self.embedding_dim = 768 # 384, 768, 1024, 1280, or 4096
+        self.image_size = 512  # Size of the input images
+        self.dino = None
 
         # Nonlinear
         # self.model = nn.Sequential(
@@ -23,15 +27,20 @@ class TerminationClassifier(nn.Module):
 
         # Linear
         self.model = nn.Sequential(
-            nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1, bias=True),  # 384 -> 64
-            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), # 64 -> 32
-            nn.Conv2d(32, 1, kernel_size=1, bias=True) # 32 -> 1
+            nn.Conv2d(self.embedding_dim, 64, kernel_size=3, padding=1, bias=True), 
+            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
+            nn.Conv2d(32, 1, kernel_size=1, bias=True)
         )
 
-    def forward(self, feature_grid):
-        return self.model(feature_grid).squeeze(1)
+        self.to(self.device)
+        # Load DINOv3 B16 (76M)
+        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='https://dinov3.llamameta.net/dinov3_vitb16/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth?Policy=eyJTdGF0ZW1lbnQiOlt7InVuaXF1ZV9oYXNoIjoianNmYWM1OGR6d2pkc3VuejJmc3lydGwwIiwiUmVzb3VyY2UiOiJodHRwczpcL1wvZGlub3YzLmxsYW1hbWV0YS5uZXRcLyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTczODI2MDB9fX1dfQ__&Signature=K3CFz0bsU4fXyMb%7EqRUisxBOkLPfOFMrxmoI4n5hXkXdtYywpSKDOTAFQTxZZtE9kuaG6Q3gXqQRRFGHTgW9wG7RjOi4NNaPG%7ESK%7EWnZ3POkJZyItdmfgQK9%7EWm4c15wNUcrJUMkJvOAVkYJ7vRpldqOFB8ePJNXfqQF18jdTNpKlO26ADc1Q075nshgzedZHhByFD1usg1TDyqZyhUCuywCIjTyjeoWtgi3J-bOG6852i-De5TpMGUy-KL9k5Iq%7ED75n%7Ey9eqT%7EJ0%7EFc7VEkEJR60e4HgkFWbZfvNDYYQOGbM2GKD%7EfuvKOrtN5QHpTIzyDbH3S-mMLJ20sT8IQOA__&Key-Pair-Id=K15QRJLYKIFSLZ&Download-Request-ID=1112930710788675' ).eval().to(self.device)        
 
     def extract_points(self, csv_path):
+        """
+        Extract (x, y) points from a CSV file.
+        """
+
         try:
             data = np.loadtxt(csv_path, delimiter=',', skiprows=1)
         except:
@@ -40,17 +49,20 @@ class TerminationClassifier(nn.Module):
         return data
 
     def generate_heatmap(self, points):
+        """
+        Generate a heatmap from a list of (x, y) points using Gaussians.
+        """
 
         sigma = 2
 
-        heatmap = np.zeros((self.size, self.size), dtype=np.float32)
+        heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
         for x,y in points:
             x = int(round(x))
             y = int(round(y))
-            if 0 <= x < self.size and 0 <= y < self.size:
+            if 0 <= x < self.image_size and 0 <= y < self.image_size:
                 # Create a grid of coordinates
-                xv, yv = np.meshgrid(np.arange(self.size), np.arange(self.size))
+                xv, yv = np.meshgrid(np.arange(self.image_size), np.arange(self.image_size))
 
                 # Calculate squared distance from the point
                 dist_sq = (xv - x) ** 2 + (yv - y) ** 2
@@ -63,54 +75,90 @@ class TerminationClassifier(nn.Module):
 
         return torch.tensor(heatmap)
 
-    def load_dataset(self, image_folder, dino_model, device):
+    def load_image(self, image_path, generate_heatmap = False):
+        """
+        Load a single image or a directory of images and convert them to tensors.
+        """
+
+        # Establish image transformations for model size + normalization
         transform = transforms.ToTensor()
-
-        image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.png', '.jpg'))]
-
-        image_tensors = []
-        heatmap_tensors = []
-
         transform = transforms.Compose([
-            transforms.Resize((self.size, self.size)), # If not already resized
+            transforms.Resize((self.image_size, self.image_size)), # If not already resized
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
-        for image_file in image_files:
-            image_path = os.path.join(image_folder, image_file)
-            
+        # If generating heatmap
+        if generate_heatmap:
+            heatmap_tensors = []
+
+        # If directory of images to embed is given
+        if os.path.isdir(image_path):
+            image_tensors = []
+            image_paths = [os.path.join(image_path,f) for f in os.listdir(image_path) if f.lower().endswith(('.png', '.jpg'))]
+        else:
+            image_paths = [image_path]
+
+        # Transform image, load as tensors, optionally generate heatmap
+        for image_path in image_paths:
             image = Image.open(image_path).convert("RGB")
-            img_tensor = transform(image).to(device)
-
-            csv_path = image_path.rsplit('.', 1)[0] + ".csv"
-
-            points = self.extract_points(csv_path)
-
-            heatmap_tensor = self.generate_heatmap(points)
-
-            heatmap_tensors.append(heatmap_tensor)
-
+            img_tensor = transform(image).to(self.device)
             image_tensors.append(img_tensor)
 
+            if generate_heatmap:
+                csv_path = image_path.rsplit('.', 1)[0] + ".csv"
+                points = self.extract_points(csv_path)
+                heatmap_tensor = self.generate_heatmap(points)
+                heatmap_tensors.append(heatmap_tensor)
+        return image_tensors, heatmap_tensors
+        
+    def embed(self, image_tensors_batch):
+        """
+        Get DINOv3 features from a batch of image tensors.
+        """
+
+        with torch.inference_mode():
+            output = self.dino.forward_features(image_tensors_batch)
+        raw_feature_grid = output["x_norm_patchtokens"]
+        B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
+        patch_count=int(self.image_size/self.patch_size)
+        raw_feature_grid = raw_feature_grid.reshape(B, patch_count, patch_count, C)  # [Batch size, height, width, feature dimension]
+
+        # compute per-point feature using bilinear interpolation
+        interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
+                                                size=(self.image_size, self.image_size),
+                                                mode='bilinear')
+        batch_features = interpolated_feature_grid
+        return batch_features
+
+    def forward(self, feature_grid):
+        return self.model(feature_grid).squeeze(1)
+
+    def load_dataset(self, image_path):
+        """
+        Load dataset of images and corresponding heatmaps.
+        """
+
+        image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
         return image_tensors, heatmap_tensors
 
-    def train_model(self, dino_model, device, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
-        self.to(device)
-        dino_model.eval().to(device)
+    def train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
-        images_tensor, heatmaps_tensor =  self.load_dataset(image_folder=input_dir, dino_model=dino_model, device=device)
+        images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
+        images_tensor = torch.stack(images_tensor).to(self.device)
+        heatmaps_tensor = torch.stack(heatmaps_tensor).to(self.device)
 
-        images_tensor = torch.stack(images_tensor).to(device)
-        heatmaps_tensor = torch.stack(heatmaps_tensor).to(device)
+        # Get number of samples
         n = images_tensor.shape[0]
 
+        # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
 
+        # Train
         for epoch in range(num_epochs):
             total_loss = 0.0
 
@@ -124,21 +172,11 @@ class TerminationClassifier(nn.Module):
                 batch_images = images_shuffled[i:i + batch_size]
                 batch_heatmaps = heatmaps_shuffled[i:i + batch_size]
 
-                with torch.no_grad():
-                    output = dino_model.forward_features(batch_images)
-                    raw_feature_grid = output["x_norm_patchtokens"]
-                    B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
-                    raw_feature_grid = raw_feature_grid.reshape(B, 28, 28, C)  # [Batch size, height, width, feature dimension]
+                batch_features = self.embed(batch_images)
 
-                    # compute per-point feature using bilinear interpolation
-                    interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
-                                                            size=(self.size, self.size),
-                                                            mode='bilinear')
-                    batch_features = interpolated_feature_grid
-
-                # get features from images
-                batch_features = batch_features.to(device)
-                batch_heatmaps = batch_heatmaps.to(device)
+                # Get features from images
+                batch_features = batch_features.to(self.device)
+                batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
                 loss = criterion(logits, batch_heatmaps)
@@ -162,16 +200,16 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
 
-    test_file = "right-2025-06-13-22-47-31_90"
+    test_file = "right-2025-06-26-21-06-45"
 
-    classifier = TerminationClassifier(feature_dim=384)  # Assuming DINO features are 384-dimensional
+    classifier = TerminationClassifier()
 
-    points = classifier.extract_points(f"./screenshots/raw_1_augmented/{test_file}.csv")
+    points = classifier.extract_points(f"./screenshots/false_positive/right/{test_file}.csv")
 
     heatmap = classifier.generate_heatmap(points)
 
     plt.figure(figsize=(8,6))
-    plt.imshow(np.array(Image.open(f"./screenshots/raw_1_augmented/{test_file}.png").convert("RGB")))
+    plt.imshow(np.array(Image.open(f"./screenshots/false_positive/right/{test_file}.png").convert("RGB").resize((classifier.image_size, classifier.image_size))))
     heatmap = heatmap.detach().cpu().squeeze().numpy()
     plt.imshow(heatmap, alpha=0.5, cmap='jet')
     plt.show()

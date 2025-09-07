@@ -1,5 +1,6 @@
-import torch
 from dinoproof.classifier import TerminationClassifier
+
+import torch
 import matplotlib.pyplot as plt
 import numpy as np
 from torchvision import transforms
@@ -8,7 +9,7 @@ from PIL import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-classifier = TerminationClassifier(feature_dim=384)
+classifier = TerminationClassifier()
 
 dataset_name = "false_positive_augmented"
 test_file = "right-2025-06-26-21-07-29_180"
@@ -50,17 +51,21 @@ with torch.no_grad():
 # Visualize
 plt.figure(figsize=(10, 5))
 
-plt.subplot(1, 2, 1)
-plt.imshow(np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB")))
-#plt.imshow(real_heatmap, alpha=0.5, cmap="jet")
-plt.title("Ground Truth Heatmap")
-plt.axis("off")
+ax1 = plt.subplot(1, 2, 1)
+img1 = np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB"))
+ax1.imshow(img1)
+#ax1.imshow(real_heatmap, alpha=0.5, cmap="jet")
+ax1.set_title("Ground Truth Heatmap")
+ax1.set_xticks(np.linspace(0, img1.shape[1], 5))
+ax1.set_yticks(np.linspace(0, img1.shape[0], 5))
 
-plt.subplot(1, 2, 2)
-plt.imshow(np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB")))
-plt.imshow(model_heatmap.cpu().squeeze(), alpha=0.5, cmap="jet")
-plt.title("Model Predicted Heatmap")
-plt.axis("off")
+ax2 = plt.subplot(1, 2, 2)
+img2 = np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB"))
+ax2.imshow(img2)
+ax2.imshow(model_heatmap.cpu().squeeze(), alpha=0.5, cmap="jet")
+ax2.set_title("Model Predicted Heatmap")
+ax2.set_xticks(np.linspace(0, img2.shape[1], 5))
+ax2.set_yticks(np.linspace(0, img2.shape[0], 5))
 
 plt.suptitle(test_file, fontsize=16)
 plt.show()
