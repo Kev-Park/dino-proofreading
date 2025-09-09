@@ -1,16 +1,18 @@
 from dinoproof.classifier import TerminationClassifier
-import torch
 import time
+import argparse
 
-if __name__ == "__main__":
-    output_dir = "weights/" + time.strftime("%Y-%m-%d-%H-%M-%S")
-    input_dir = "./screenshots/raw_1_false_positive_augmented"
+parser = argparse.ArgumentParser(description="dino-proofreading")
+parser.add_argument("--input_dir", type=str, required=True)
+parser.add_argument("--epochs", type=int, default=10)
+parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--batch_size", type=int, default=4)
+args = parser.parse_args()
 
-    num_epochs = 10
-    learning_rate = 0.001
-    batch_size = 4
+output_dir = "weights/" + time.strftime("%Y-%m-%d-%H-%M-%S")
+input_dir = args.input_dir
 
-    classifier = TerminationClassifier()
 
-    classifier.train(input_dir=input_dir, output_dir=output_dir, num_epochs=num_epochs, learning_rate=learning_rate, batch_size=batch_size)
+classifier = TerminationClassifier()
+classifier.train(input_dir=args.input_dir, output_dir=output_dir, num_epochs=args.epochs, learning_rate=args.lr, batch_size=args.batch_size)
 
