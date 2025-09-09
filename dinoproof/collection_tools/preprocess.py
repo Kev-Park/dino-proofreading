@@ -11,8 +11,8 @@ for image in os.listdir(foldername):
     image_obj = Image.open(os.path.join(foldername, image))
 
     left_image, right_image = split_image(image_obj)
-    left_image = left_image.resize((392, 392), Image.BICUBIC)
-    right_image = right_image.resize((392, 392), Image.BICUBIC)
+    left_image = left_image.resize((512, 512), Image.BICUBIC)
+    right_image = right_image.resize((512, 512), Image.BICUBIC)
 
     if not os.path.exists(os.path.join(foldername, "left")):
         os.makedirs(os.path.join(foldername, "left"))

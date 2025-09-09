@@ -75,9 +75,11 @@ class TerminationClassifier(nn.Module):
 
         return torch.tensor(heatmap)
 
-    def load_image(self, image_path, generate_heatmap = False):
+    def load_image(self, image_path, generate_heatmap = False, normalize = True):
         """
         Load a single image or a directory of images and convert them to tensors.
+
+        generate_heatmap: If True, will attempt to fetch ground truth heatmaps (assuming labeled data).
         """
 
         # Establish image transformations for model size + normalization
@@ -85,16 +87,17 @@ class TerminationClassifier(nn.Module):
         transform = transforms.Compose([
             transforms.Resize((self.image_size, self.image_size)), # If not already resized
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
+        normalize_transform = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         # If generating heatmap
+        image_tensors = []
+        heatmap_tensors = None
         if generate_heatmap:
             heatmap_tensors = []
 
         # If directory of images to embed is given
         if os.path.isdir(image_path):
-            image_tensors = []
             image_paths = [os.path.join(image_path,f) for f in os.listdir(image_path) if f.lower().endswith(('.png', '.jpg'))]
         else:
             image_paths = [image_path]
@@ -103,6 +106,8 @@ class TerminationClassifier(nn.Module):
         for image_path in image_paths:
             image = Image.open(image_path).convert("RGB")
             img_tensor = transform(image).to(self.device)
+            if normalize:
+                img_tensor = normalize_transform(img_tensor)
             image_tensors.append(img_tensor)
 
             if generate_heatmap:
@@ -140,17 +145,15 @@ class TerminationClassifier(nn.Module):
         """
 
         image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
-        return image_tensors, heatmap_tensors
+        return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
-    def train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
+    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
-        images_tensor = torch.stack(images_tensor).to(self.device)
-        heatmaps_tensor = torch.stack(heatmaps_tensor).to(self.device)
 
         # Get number of samples
         n = images_tensor.shape[0]

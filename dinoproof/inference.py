@@ -3,69 +3,58 @@ from dinoproof.classifier import TerminationClassifier
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from torchvision import transforms
+import time
+import os
 from torch.nn.functional import interpolate
 from PIL import Image
+import argparse
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Parse CMD-line args
+parser = argparse.ArgumentParser(description="dino-proofreading")
+parser.add_argument("--input_dir", type=str, required=True)
+parser.add_argument("--weights_dir", type=str, required=True)
+args = parser.parse_args()
 
+# Load classifier
 classifier = TerminationClassifier()
+classifier.eval()
+state_dict = torch.load(args.weights_dir, map_location=classifier.device)
 
-dataset_name = "false_positive_augmented"
-test_file = "right-2025-06-26-21-07-29_180"
-weights_path = "linear_false_positive/model_epoch_10"
+# Run inference
+images, _ = classifier.load_image(image_path=args.input_dir, generate_heatmap=False, normalize=False)
+images = torch.stack(images).to(classifier.device)
+features = classifier.embed(images)
+heatmaps = classifier.forward(features)
 
-classifier.load_state_dict(torch.load(f"./weights/{weights_path}.pth"))
-classifier.eval().to(device)
-
-# Get features
-image_path = f"./screenshots/{dataset_name}/{test_file}.png"
-transform = transforms.Compose([
-            transforms.Resize((classifier.size, classifier.size)), # If not already resized
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-image = Image.open(image_path).convert("RGB")
-img_tensor = transform(image).to(device).unsqueeze(0)  # Add batch dimension
-
-dino_model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg').eval().to(device)
-with torch.no_grad():
-    output = dino_model.forward_features(img_tensor)
-    raw_feature_grid = output["x_norm_patchtokens"]
-    B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
-    raw_feature_grid = raw_feature_grid.reshape(B, 28, 28, C)  # [Batch size, height, width, feature dimension]
-
-    # compute per-point feature using bilinear interpolation
-    interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
-                                            size=(classifier.size, classifier.size),
-                                            mode='bilinear')
-    features = interpolated_feature_grid
+# Save results
+output_dir = "results/" + time.strftime("%Y-%m-%d-%H-%M-%S")
+os.makedirs(output_dir, exist_ok=True)
 
 # Get model heatmap
 with torch.no_grad():
     model_heatmap = classifier.forward(features)
+model_heatmap = model_heatmap.cpu().squeeze()
+images = images.cpu()
 
 # Get real heatmap
-#real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
+# real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
 
-# Visualize
 plt.figure(figsize=(10, 5))
+for i in range(len(model_heatmap)):
+    ax1 = plt.subplot(1, 2, 1)
+    img = images[i].permute(1, 2, 0)
+    ax1.imshow(img)
+    #ax1.imshow(real_heatmap, alpha=0.5, cmap="jet")
+    ax1.set_title("Original Image")
+    ax1.set_xticks(np.linspace(0, img.shape[1], 5))
+    ax1.set_yticks(np.linspace(0, img.shape[0], 5))
 
-ax1 = plt.subplot(1, 2, 1)
-img1 = np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB"))
-ax1.imshow(img1)
-#ax1.imshow(real_heatmap, alpha=0.5, cmap="jet")
-ax1.set_title("Ground Truth Heatmap")
-ax1.set_xticks(np.linspace(0, img1.shape[1], 5))
-ax1.set_yticks(np.linspace(0, img1.shape[0], 5))
+    ax2 = plt.subplot(1, 2, 2)
+    ax2.imshow(img)
+    ax2.imshow(model_heatmap[i], alpha=0.5, cmap="jet")
+    ax2.set_title("Model Predicted Heatmap")
+    ax2.set_xticks(np.linspace(0, img.shape[1], 5))
+    ax2.set_yticks(np.linspace(0, img.shape[0], 5))
 
-ax2 = plt.subplot(1, 2, 2)
-img2 = np.array(Image.open(f"./screenshots/{dataset_name}/{test_file}.png").convert("RGB"))
-ax2.imshow(img2)
-ax2.imshow(model_heatmap.cpu().squeeze(), alpha=0.5, cmap="jet")
-ax2.set_title("Model Predicted Heatmap")
-ax2.set_xticks(np.linspace(0, img2.shape[1], 5))
-ax2.set_yticks(np.linspace(0, img2.shape[0], 5))
-
-plt.suptitle(test_file, fontsize=16)
-plt.show()
+    plt.suptitle(f"Test {i}", fontsize=16)
+    plt.savefig(os.path.join(output_dir, f"result-{i}.png"))

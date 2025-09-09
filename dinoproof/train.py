@@ -14,5 +14,5 @@ input_dir = args.input_dir
 
 
 classifier = TerminationClassifier()
-classifier.train(input_dir=args.input_dir, output_dir=output_dir, num_epochs=args.epochs, learning_rate=args.lr, batch_size=args.batch_size)
+classifier.run_train(input_dir=args.input_dir, output_dir=output_dir, num_epochs=args.epochs, learning_rate=args.lr, batch_size=args.batch_size)
 
