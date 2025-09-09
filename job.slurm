@@ -12,7 +12,7 @@
 #SBATCH --mail-user=kp0374@princeton.edu
 
 module purge
-module load anaconda3/2024.02
+module load anacondapy/2024.02
 conda activate dino-proofreading
 pip install -e .
 
