@@ -39,8 +39,9 @@ images = images.cpu()
 # Get real heatmap
 # real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
 
-plt.figure(figsize=(10, 5))
+
 for i in range(len(model_heatmap)):
+    plt.figure(figsize=(10, 5),layout='constrained')
     ax1 = plt.subplot(1, 2, 1)
     img = images[i].permute(1, 2, 0)
     ax1.imshow(img)
@@ -51,10 +52,13 @@ for i in range(len(model_heatmap)):
 
     ax2 = plt.subplot(1, 2, 2)
     ax2.imshow(img)
-    ax2.imshow(model_heatmap[i], alpha=0.5, cmap="jet")
+    img_heat = ax2.imshow(model_heatmap[i], alpha=0.5, cmap="jet")
     ax2.set_title("Model Predicted Heatmap")
     ax2.set_xticks(np.linspace(0, img.shape[1], 5))
     ax2.set_yticks(np.linspace(0, img.shape[0], 5))
+
+    cbar1 = plt.colorbar(img_heat)
+    cbar1.set_label("Heatmap Intensity")
 
     plt.suptitle(f"Test {i}", fontsize=16)
     plt.savefig(os.path.join(output_dir, f"result-{i}.png"))
