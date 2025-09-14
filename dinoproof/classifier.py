@@ -29,11 +29,11 @@ class TerminationClassifier(nn.Module):
         # Linear
         self.model = nn.Sequential(
             nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(128),
+            #nn.BatchNorm2d(128),
             nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(64),
+            #nn.BatchNorm2d(64),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(32),
+            #nn.BatchNorm2d(32),
             nn.Conv2d(32, 1, kernel_size=1, bias=True)
         )
 
@@ -143,7 +143,7 @@ class TerminationClassifier(nn.Module):
         return batch_features
 
     def forward(self, feature_grid):
-        feature_grid = F.normalize(feature_grid, p=2, dim=1)  # Normalize features along the channel dimension
+        #feature_grid = F.normalize(feature_grid, p=2, dim=1)  # Normalize features along the channel dimension
         return self.model(feature_grid).squeeze(1)
 
     def load_dataset(self, image_path):
@@ -157,8 +157,9 @@ class TerminationClassifier(nn.Module):
     def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        pos_weight = torch.tensor([100.0], device=self.device)  
-        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        #pos_weight = torch.tensor([100.0], device=self.device)  
+        #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
