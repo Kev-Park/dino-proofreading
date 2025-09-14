@@ -41,6 +41,9 @@ images = images.cpu()
 
 
 for i in range(len(model_heatmap)):
+
+    print(model_heatmap[i].shape)
+
     plt.figure(figsize=(10, 5),layout='constrained')
     ax1 = plt.subplot(1, 2, 1)
     img = images[i].permute(1, 2, 0)
