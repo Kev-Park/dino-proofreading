@@ -93,7 +93,7 @@ class TerminationClassifier(nn.Module):
             transforms.Resize((self.image_size, self.image_size)), # If not already resized
             transforms.ToTensor(),
         ])
-        normalize_transform = transforms.Normalize(mean=[0.430, 0.411, 0.296], std=[0.213, 0.156, 0.143])
+        normalize_transform = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
         # If generating heatmap
         image_tensors = []
