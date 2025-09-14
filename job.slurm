@@ -16,4 +16,4 @@ module load anacondapy/2024.02
 conda activate dino-proofreading
 pip install -e .
 
-python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512"
+python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512" --lr 0.0001
