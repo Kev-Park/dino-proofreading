@@ -39,7 +39,7 @@ class TerminationClassifier(nn.Module):
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
-        self.dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg')
+        self.dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg').to(self.device)
         #self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth').eval().to(self.device)        
 
     def extract_points(self, csv_path):
