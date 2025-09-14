@@ -157,11 +157,20 @@ class TerminationClassifier(nn.Module):
         image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
         return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
+    def focal_loss(self, inputs, targets, alpha=0.25, gamma=2.0):
+        # BCE per pixel
+        bce = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none")
+        # p_t = probability of the true class
+        pt = torch.exp(-bce)
+        # focal loss
+        loss = alpha * (1 - pt) ** gamma * bce
+        return loss.mean()
+
     def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        pos_weight = torch.tensor([100.0], device=self.device)  
-        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        #pos_weight = torch.tensor([100.0], device=self.device)  
+        #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -193,7 +202,8 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = criterion(logits, batch_heatmaps)
+                #loss = criterion(logits, batch_heatmaps)
+                loss = self.focal_loss(logits, batch_heatmaps)
 
                 optimizer.zero_grad()
                 loss.backward()
