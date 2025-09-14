@@ -82,8 +82,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Augment image+CSV pairs by rotation.")
-    parser.add_argument("input_folder", type=str, help="Input folder containing images and CSVs.")
-    parser.add_argument("output_folder", type=str, help="Output folder for augmented files.")
+    parser.add_argument("--input_folder", type=str, help="Input folder containing images and CSVs.")
+    parser.add_argument("--output_folder", type=str, help="Output folder for augmented files.")
 
     args = parser.parse_args()
 

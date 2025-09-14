@@ -12,7 +12,6 @@ args = parser.parse_args()
 output_dir = "weights/" + time.strftime("%Y-%m-%d-%H-%M-%S")
 input_dir = args.input_dir
 
-
 classifier = TerminationClassifier()
 classifier.run_train(input_dir=args.input_dir, output_dir=output_dir, num_epochs=args.epochs, learning_rate=args.lr, batch_size=args.batch_size)
 

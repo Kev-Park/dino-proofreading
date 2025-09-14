@@ -13,7 +13,7 @@ class TerminationClassifier(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.patch_size = 16 # Default
         self.embedding_dim = 768 # 384, 768, 1024, 1280, or 4096
-        self.image_size = 256  # Size of the input images
+        self.image_size = 512  # Size of the input images
         self.dino = None
 
         # Nonlinear
@@ -203,16 +203,16 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
 
-    test_file = "right-2025-06-26-21-06-45"
+    test_file = "right-2025-06-13-22-47-31_0"
 
     classifier = TerminationClassifier()
 
-    points = classifier.extract_points(f"./screenshots/false_positive/right/{test_file}.csv")
+    points = classifier.extract_points(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.csv")
 
     heatmap = classifier.generate_heatmap(points)
 
     plt.figure(figsize=(8,6))
-    plt.imshow(np.array(Image.open(f"./screenshots/false_positive/right/{test_file}.png").convert("RGB").resize((classifier.image_size, classifier.image_size))))
+    plt.imshow(np.array(Image.open(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.png").convert("RGB").resize((classifier.image_size, classifier.image_size))))
     heatmap = heatmap.detach().cpu().squeeze().numpy()
     plt.imshow(heatmap, alpha=0.5, cmap='jet')
     plt.show()
