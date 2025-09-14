@@ -23,15 +23,8 @@ state_dict = torch.load(args.weights_dir, map_location=classifier.device)
 # Run inference
 images, _ = classifier.load_image(image_path=args.input_dir, generate_heatmap=False, normalize=False)
 images = torch.stack(images).to(classifier.device)
-
-# Generate heatmaps in batches to avoid OOM
-batch_size = 4
-heatmaps = []
-for start in range(0, len(images), batch_size):
-    end = start + batch_size
-    batch = images[start:end]
-    features = classifier.embed(batch)
-    heatmaps.append(classifier.forward(features))
+features = classifier.embed(images)
+heatmaps = classifier.forward(features)
 
 # Save results
 output_dir = "results/" + time.strftime("%Y-%m-%d-%H-%M-%S")
