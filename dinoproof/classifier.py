@@ -13,7 +13,7 @@ class TerminationClassifier(nn.Module):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.patch_size = 16 # Default
-        self.embedding_dim = 384 # 384, 768, 1024, 1280, or 4096
+        self.embedding_dim = 768 # 384, 768, 1024, 1280, or 4096
         self.image_size = 512  # Size of the input images
         self.dino = None
 
@@ -39,7 +39,7 @@ class TerminationClassifier(nn.Module):
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
-        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vits16plus', weights='https://dinov3.llamameta.net/dinov3_vits16plus/dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth?Policy=eyJTdGF0ZW1lbnQiOlt7InVuaXF1ZV9oYXNoIjoidTJxdXEyejIzams1N2ZrejZ6ZmVheHJoIiwiUmVzb3VyY2UiOiJodHRwczpcL1wvZGlub3YzLmxsYW1hbWV0YS5uZXRcLyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTgwMzkzOTh9fX1dfQ__&Signature=P8wOtmnNOOgEsjzAYJDgbdFzgPy9Q2iBdoNfiGY8GBBNWEGQ0ZK084kSAn5Km3pSvSCp%7EyW7hn5ltFVU1ukH6cgVsrkA6adaep3d0GuJv4D8dOgHHrWRfIBklCgE8uoeKb415Q%7E0GnEn2vtiUVYz5ivp1kn9PnnQtChs8iilNa%7EWa3lj3lRg4E2EmAO%7EZG3XJi8FxQFOFXoFKcSbP%7E-kClyQZ6cWHcm3uk2w4IkoEOFvY5BibfEK5VDHqZdEml7bMTdhk6xjmnVM68zqlvmHf0xGsWtMzRmgLnyHkE7VaRoVyuku7fOhAsYjEFd09a2PDc5jI1ySGnmlWWCmtXvI0w__&Key-Pair-Id=K15QRJLYKIFSLZ&Download-Request-ID=801913999368621' ).eval().to(self.device)        
+        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth').eval().to(self.device)        
 
     def extract_points(self, csv_path):
         """
@@ -156,7 +156,8 @@ class TerminationClassifier(nn.Module):
     def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        criterion = nn.BCEWithLogitsLoss()
+        pos_weight = torch.tensor([100.0], device=self.device)  
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
