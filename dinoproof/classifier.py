@@ -157,12 +157,11 @@ class TerminationClassifier(nn.Module):
         image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
         return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
-    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.001, batch_size=4):
+    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        #pos_weight = torch.tensor([100.0], device=self.device)  
-        #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-        criterion = nn.MSELoss()
+        pos_weight = torch.tensor([200.0], device=self.device)  
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -194,7 +193,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = criterion(logits, batch_heatmaps.float())
+                loss = criterion(logits, batch_heatmaps)
 
                 optimizer.zero_grad()
                 loss.backward()
