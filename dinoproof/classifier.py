@@ -4,6 +4,7 @@ import numpy as np
 import os
 from torchvision import transforms
 from torch.nn.functional import interpolate
+import torch.nn.functional as F
 from PIL import Image
 
 class TerminationClassifier(nn.Module):
@@ -141,6 +142,7 @@ class TerminationClassifier(nn.Module):
         return batch_features
 
     def forward(self, feature_grid):
+        feature_grid = F.normalize(feature_grid, p=2, dim=1)  # Normalize features along the channel dimension
         return self.model(feature_grid).squeeze(1)
 
     def load_dataset(self, image_path):
@@ -211,12 +213,22 @@ if __name__ == "__main__":
 
     classifier = TerminationClassifier()
 
-    points = classifier.extract_points(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.csv")
-
-    heatmap = classifier.generate_heatmap(points)
+    image, heatmap = classifier.load_image(generate_heatmap=True, image_path="screenshots/misc/test")
 
     plt.figure(figsize=(8,6))
-    plt.imshow(np.array(Image.open(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.png").convert("RGB").resize((classifier.image_size, classifier.image_size))))
-    heatmap = heatmap.detach().cpu().squeeze().numpy()
-    plt.imshow(heatmap, alpha=0.5, cmap='jet')
+    plt.imshow(np.array(image[0].cpu().permute(1,2,0)))
+    #heatmap = heatmap.detach().cpu().squeeze().numpy()
+    plt.imshow(heatmap[0].cpu().squeeze(), alpha=0.5, cmap='jet')
     plt.show()
+
+
+
+    # points = classifier.extract_points(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.csv")
+
+    # heatmap = classifier.generate_heatmap(points)
+
+    # plt.figure(figsize=(8,6))
+    # plt.imshow(np.array(Image.open(f"./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/{test_file}.png").convert("RGB").resize((classifier.image_size, classifier.image_size))))
+    # heatmap = heatmap.detach().cpu().squeeze().numpy()
+    # plt.imshow(heatmap, alpha=0.5, cmap='jet')
+    # plt.show()
