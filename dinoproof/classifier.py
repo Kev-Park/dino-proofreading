@@ -53,7 +53,7 @@ class TerminationClassifier(nn.Module):
         Generate a heatmap from a list of (x, y) points using Gaussians.
         """
 
-        sigma = 2
+        sigma = 5
 
         heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
 
-    test_file = "right-2025-06-13-22-47-31_0"
+    test_file = "right-2025-06-13-22-49-47_0"
 
     classifier = TerminationClassifier()
 
