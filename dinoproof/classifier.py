@@ -17,20 +17,24 @@ class TerminationClassifier(nn.Module):
         self.dino = None
 
         # Nonlinear
-        self.model = nn.Sequential(
-            nn.Conv2d(self.embedding_dim, 64, kernel_size=3, padding=1),  # 384 -> 64
-            nn.ReLU(),
-            nn.Conv2d(64, 32, kernel_size=3, padding=1), # 64 -> 32
-            nn.ReLU(),
-            nn.Conv2d(32, 1, kernel_size=1) # 32 -> 1
-        )
+        # self.model = nn.Sequential(
+        #     nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1),  # 384 -> 64
+        #     nn.ReLU(),
+        #     nn.Conv2d(64, 32, kernel_size=3, padding=1), # 64 -> 32
+        #     nn.ReLU(),
+        #     nn.Conv2d(32, 1, kernel_size=1) # 32 -> 1
+        # )
 
         # Linear
-        # self.model = nn.Sequential(
-        #     nn.Conv2d(self.embedding_dim, 64, kernel_size=3, padding=1, bias=True), 
-        #     nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-        #     nn.Conv2d(32, 1, kernel_size=1, bias=True)
-        # )
+        self.model = nn.Sequential(
+            nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
+            nn.BatchNorm2d(128),
+            nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
+            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
+            nn.BatchNorm2d(32),
+            nn.Conv2d(32, 1, kernel_size=1, bias=True)
+        )
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
