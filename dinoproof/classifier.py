@@ -169,10 +169,10 @@ class TerminationClassifier(nn.Module):
     def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        #pos_weight = torch.tensor([200.0], device=self.device)  
-        #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        pos_weight = torch.tensor([500.0], device=self.device)  
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         #criterion = nn.MSELoss()
-        criterion = nn.BCEWithLogitsLoss()
+        #criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
