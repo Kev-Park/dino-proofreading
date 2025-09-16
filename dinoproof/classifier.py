@@ -204,7 +204,9 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = criterion(logits, batch_heatmaps)
+                #loss = criterion(logits, batch_heatmaps)
+                pixel_weight = 1.0 + 100.0 * batch_heatmaps
+                loss = F.binary_cross_entropy_with_logits(logits, batch_heatmaps, weight=pixel_weight)
 
                 optimizer.zero_grad()
                 loss.backward()
