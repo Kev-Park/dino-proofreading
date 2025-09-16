@@ -169,7 +169,7 @@ class TerminationClassifier(nn.Module):
     def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        pos_weight = torch.tensor([200.0], device=self.device)  
+        pos_weight = torch.tensor([100.0], device=self.device)  
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         #criterion = nn.MSELoss()
         #criterion = nn.BCEWithLogitsLoss()
@@ -204,9 +204,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                #loss = criterion(logits, batch_heatmaps)
-                pixel_weight = 1.0 + 100.0 * batch_heatmaps
-                loss = F.binary_cross_entropy_with_logits(logits, batch_heatmaps, weight=pixel_weight)
+                loss = criterion(logits, batch_heatmaps)
 
                 optimizer.zero_grad()
                 loss.backward()
