@@ -132,14 +132,14 @@ class TerminationClassifier(nn.Module):
         """
 
         with torch.inference_mode():
-            output = self.dino.forward_features(image_tensors_batch)
+            #output = self.dino.forward_features(image_tensors_batch)
             output2 = self.dino.get_intermediate_layers(image_tensors_batch, n=range(12), reshape=True, norm=True)
 
-        raw_feature_grid = output["x_norm_patchtokens"]
+        #raw_feature_grid = output["x_norm_patchtokens"]
 
+        cls, raw_feature_grid = output2[-1]
         print(raw_feature_grid.shape)
-        print(output2.shape())
-
+        raw_feature_grid = raw_feature_grid.permute(0, 3, 1, 2)
 
         B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
         patch_count=int(self.image_size/self.patch_size)
