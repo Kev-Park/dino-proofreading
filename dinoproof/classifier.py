@@ -27,16 +27,25 @@ class TerminationClassifier(nn.Module):
         # )
 
         # Linear
+        # self.model = nn.Sequential(
+        #     nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(32, 1, kernel_size=1, bias=True)
+        # )
+        
+        # Decoder
         self.model = nn.Sequential(
-            nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
-            nn.ReLU(inplace=True),
-            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 1, kernel_size=1, bias=True)
+            nn.Conv2d(768, 256, 3, padding=1), nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1), nn.ReLU(),  # 32 -> 64
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1), nn.ReLU(),   # 64 -> 128
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1), nn.ReLU(),    # 128 -> 256
+            nn.ConvTranspose2d(32, 16, 4, stride=2, padding=1), nn.ReLU(),    # 256 -> 512
+            nn.Conv2d(16, 1, 1)  # final 1-channel heatmap
         )
-        #self.model = self.model.to(self.device)
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
@@ -136,12 +145,14 @@ class TerminationClassifier(nn.Module):
         patch_count=int(self.image_size/self.patch_size)
         raw_feature_grid = raw_feature_grid.reshape(B, patch_count, patch_count, C)  # [Batch size, height, width, feature dimension]
 
+        return raw_feature_grid.permute(0, 3, 1, 2)  # Rearrange to [Batch size, feature_dim, patch_h, patch_w]
+
         # compute per-point feature using bilinear interpolation
-        interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
-                                                size=(self.image_size, self.image_size),
-                                                mode='bilinear')
-        batch_features = interpolated_feature_grid
-        return batch_features
+        # interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
+        #                                         size=(self.image_size, self.image_size),
+        #                                         mode='bilinear')
+        # batch_features = interpolated_feature_grid
+        # return batch_features
 
     def forward(self, feature_grid):
         return self.model(feature_grid).squeeze(1)
