@@ -29,16 +29,14 @@ class TerminationClassifier(nn.Module):
         # Linear
         self.model = nn.Sequential(
             nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-            nn.BatchNorm2d(32),
             nn.ReLU(inplace=True),
             nn.Conv2d(32, 1, kernel_size=1, bias=True)
         )
+        #self.model = self.model.to(self.device)
 
         self.to(self.device)
         # Load DINOv3 B16 (76M)
@@ -132,15 +130,8 @@ class TerminationClassifier(nn.Module):
         """
 
         with torch.inference_mode():
-            #output = self.dino.forward_features(image_tensors_batch)
-            output2 = self.dino.get_intermediate_layers(image_tensors_batch, n=range(12), reshape=True, norm=True)
-
-        #raw_feature_grid = output["x_norm_patchtokens"]
-
-        cls, raw_feature_grid = output2[-1]
-        print(raw_feature_grid.shape)
-        raw_feature_grid = raw_feature_grid.permute(0, 3, 1, 2)
-
+            output = self.dino.forward_features(image_tensors_batch)
+        raw_feature_grid = output["x_norm_patchtokens"]
         B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
         patch_count=int(self.image_size/self.patch_size)
         raw_feature_grid = raw_feature_grid.reshape(B, patch_count, patch_count, C)  # [Batch size, height, width, feature dimension]
@@ -153,7 +144,6 @@ class TerminationClassifier(nn.Module):
         return batch_features
 
     def forward(self, feature_grid):
-        feature_grid = F.normalize(feature_grid, p=2, dim=1)  # Normalize features along the channel dimension
         return self.model(feature_grid).squeeze(1)
 
     def load_dataset(self, image_path):
