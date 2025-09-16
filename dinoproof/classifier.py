@@ -174,7 +174,8 @@ class TerminationClassifier(nn.Module):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         #pos_weight = torch.tensor([200.0], device=self.device)  
         #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
-        criterion = nn.MSELoss()
+        #criterion = nn.MSELoss()
+        criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -206,7 +207,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = criterion(logits, batch_heatmaps.float())
+                loss = criterion(logits, batch_heatmaps)
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -218,7 +219,7 @@ class TerminationClassifier(nn.Module):
             avg_loss = total_loss / (n // batch_size)
             print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training")
 
-            if epoch % 2 == 0:
+            if epoch % 10 == 0:
                 save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
                 torch.save(self.state_dict(), save_path)
                 print(f"Weights saved!")
