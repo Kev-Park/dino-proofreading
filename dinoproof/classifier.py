@@ -88,6 +88,10 @@ class TerminationClassifier(nn.Module):
 
                 # Combine with existing heatmap (supports multiple points)
                 heatmap = np.maximum(heatmap, gauss)
+                
+                # Filter out values smaller than threshold
+                threshold = 0.01
+                heatmap[heatmap < threshold] = 0
 
         return torch.tensor(heatmap)
 
@@ -223,7 +227,7 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
 
-    test_file = "right-2025-06-13-22-49-47_0"
+    test_file = "right-2025-06-13-22-47-31_0"
 
     classifier = TerminationClassifier()
 
