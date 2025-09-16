@@ -218,9 +218,10 @@ class TerminationClassifier(nn.Module):
             avg_loss = total_loss / (n // batch_size)
             print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training")
 
-            save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
-            torch.save(self.state_dict(), save_path)
-            print(f"Weights saved!")
+            if epoch % 2 == 0:
+                save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
+                torch.save(self.state_dict(), save_path)
+                print(f"Weights saved!")
 
     
 if __name__ == "__main__":
