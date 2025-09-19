@@ -16,4 +16,4 @@ module load anacondapy/2024.02
 conda activate dino-proofreading
 pip install -e .
 
-python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/test_overfit_512" --lr 0.0001 --epochs 50
+python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512" --lr 0.0001 --epochs 30 --save_rate 5

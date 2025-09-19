@@ -46,7 +46,6 @@ for i in range(len(model_heatmap)):
     ax1 = plt.subplot(1, 2, 1)
     img = images[i].permute(1, 2, 0)
 
-    print(img.shape)
 
     ax1.imshow(img)
     #ax1.imshow(real_heatmap, alpha=0.5, cmap="jet")

@@ -166,11 +166,9 @@ class TerminationClassifier(nn.Module):
         image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
         return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
-    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4):
+    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        #pos_weight = torch.tensor([100.0], device=self.device)  
-        #criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
         #criterion = nn.MSELoss()
         criterion = nn.BCEWithLogitsLoss()
 
@@ -204,9 +202,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                #loss = criterion(logits, batch_heatmaps)
-                soft_weights = 1 + 3*batch_heatmaps  # Weigh positive pixels more
-                loss = F.binary_cross_entropy_with_logits(logits, batch_heatmaps, weight=soft_weights)
+                loss = 0.5*criterion(logits, batch_heatmaps)  + 0.5*F.mse_loss(torch.sigmoid(logits), batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -218,7 +214,7 @@ class TerminationClassifier(nn.Module):
             avg_loss = total_loss / (n // batch_size)
             print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training")
 
-            if (epoch+1) % 10 == 0:
+            if (epoch+1) % save_rate == 0:
                 save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
                 torch.save(self.state_dict(), save_path)
                 print(f"Weights saved!")
