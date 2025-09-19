@@ -39,7 +39,7 @@ images = images.cpu()
 # Get real heatmap
 # real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
 
-
+print("Saving results",flush=True)
 for i in range(len(model_heatmap)):
 
     plt.figure(figsize=(10, 5),layout='constrained')

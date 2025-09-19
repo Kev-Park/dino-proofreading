@@ -104,5 +104,5 @@ class NGLData():
 
 if __name__ == "__main__":
     data_collector = NGLData()
-    #data_collector.collect()
+    data_collector.collect()
     #data_collector.annotate_terminate("./screenshots/RAW_DATASETS/test_set_1_augmented_512")
