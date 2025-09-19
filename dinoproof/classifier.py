@@ -185,7 +185,7 @@ class TerminationClassifier(nn.Module):
         for epoch in range(num_epochs):
             total_loss = 0.0
 
-            print(f"Epoch {epoch + 1}/{num_epochs}, start training")
+            print(f"Epoch {epoch + 1}/{num_epochs}, start training",flush=True)
 
             perm = torch.randperm(n)
             images_shuffled = images_tensor[perm]
@@ -209,15 +209,15 @@ class TerminationClassifier(nn.Module):
                 optimizer.step()
 
                 total_loss += loss.item()
-                print(f"  Batch {i // batch_size + 1} - Loss: {loss.item():.4f}")
+                print(f"  Batch {i // batch_size + 1} - Loss: {loss.item():.4f}",flush=True)
             
             avg_loss = total_loss / (n // batch_size)
-            print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training")
+            print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training",flush=True)
 
             if (epoch+1) % save_rate == 0:
-                save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
+                save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth",flush=True)
                 torch.save(self.state_dict(), save_path)
-                print(f"Weights saved!")
+                print(f"Weights saved!",flush=True)
 
     
 if __name__ == "__main__":
