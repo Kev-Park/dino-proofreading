@@ -215,7 +215,7 @@ class TerminationClassifier(nn.Module):
             print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training",flush=True)
 
             if (epoch+1) % save_rate == 0:
-                save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth",flush=True)
+                save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
                 torch.save(self.state_dict(), save_path)
                 print(f"Weights saved!",flush=True)
 
