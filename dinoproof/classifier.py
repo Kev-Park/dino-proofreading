@@ -47,7 +47,6 @@ class TerminationClassifier(nn.Module):
         self.to(self.device)
         # Load DINOv3 B16 (76M)
         #self.dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg').to(self.device)
-        self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth').eval().to(self.device)        
 
     def extract_points(self, csv_path):
         """
@@ -139,6 +138,9 @@ class TerminationClassifier(nn.Module):
         Get DINOv3 features from a batch of image tensors.
         """
 
+        if self.dino is None:
+            self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth').eval().to(self.device)        
+
         with torch.no_grad():
             output = self.dino.forward_features(image_tensors_batch)
         raw_feature_grid = output["x_norm_patchtokens"]
@@ -202,7 +204,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = 0.5*criterion(logits, batch_heatmaps)  + 0.5*F.mse_loss(logits, batch_heatmaps.float())
+                loss = 0.3*criterion(logits, batch_heatmaps)  + 0.7*F.mse_loss(logits, batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -224,11 +226,11 @@ if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
 
-    test_file = "right-2025-06-13-22-47-31_0"
+    test_file = "right-2025-06-13-22-54-02_90"
 
     classifier = TerminationClassifier()
 
-    image, heatmap = classifier.load_image(generate_heatmap=True, image_path="screenshots/misc/test")
+    image, heatmap = classifier.load_image(generate_heatmap=True, image_path="screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512/" + test_file + ".png")
 
     plt.figure(figsize=(8,6))
     plt.imshow(np.array(image[0].cpu().permute(1,2,0)))
