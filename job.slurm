@@ -16,17 +16,6 @@ module load anacondapy/2024.02
 conda activate dino-proofreading
 pip install -e .
 
+python -c "import torch; print(torch.version.cuda)"
 
-echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
-
-echo "=== NVIDIA-SMI ==="
-nvidia-smi
-
-echo "=== Python/PyTorch check ==="
-python - <<'EOF'
-import torch
-print("PyTorch CUDA available:", torch.cuda.is_available())
-print("CUDA device count:", torch.cuda.device_count())
-if torch.cuda.is_available():
-    print("Device name:", torch.cuda.get_device_name(0))
-    print("torch.version.cuda:", torch.version.cuda)
+python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512" --lr 0.0001 --epochs 30 --save_rate 5
