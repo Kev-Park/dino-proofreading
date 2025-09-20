@@ -211,7 +211,7 @@ class TerminationClassifier(nn.Module):
                 #loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
-                loss = 0.6 * criterion(logits, batch_heatmaps) + 0.4 * F.mse_loss(logits, batch_heatmaps.float())
+                loss = 1.0 * criterion(logits, batch_heatmaps) + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
