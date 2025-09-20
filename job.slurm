@@ -10,6 +10,7 @@
 #SBATCH --mail-type=end          # send email when job ends
 #SBATCH --mail-type=fail         # send email if job fails
 #SBATCH --mail-user=kp0374@princeton.edu
+#SBATCH --partition=preempt
 
 module purge
 module load anacondapy/2024.02
