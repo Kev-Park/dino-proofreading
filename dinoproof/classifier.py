@@ -17,6 +17,8 @@ class TerminationClassifier(nn.Module):
         self.image_size = 512#512  # Size of the input images
         self.dino = None
 
+        init_alpha = 0.7
+        self.logit_alpha = nn.Parameter(torch.logit(torch.tensor(init_alpha)))
         # Nonlinear
         # self.model = nn.Sequential(
         #     nn.Conv2d(feature_dim, 64, kernel_size=3, padding=1),  # 384 -> 64
@@ -204,7 +206,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = 0.2*criterion(logits, batch_heatmaps)  + 0.8*F.mse_loss(logits, batch_heatmaps.float())
+                loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
