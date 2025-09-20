@@ -204,7 +204,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = 0.4*criterion(logits, batch_heatmaps)  + 0.8*F.mse_loss(logits, batch_heatmaps.float())
+                loss = 0.0*criterion(logits, batch_heatmaps)  + 1.0*F.mse_loss(logits, batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
