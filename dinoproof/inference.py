@@ -65,3 +65,7 @@ for i in range(len(model_heatmap)):
 
     plt.suptitle(f"Test {i}", fontsize=16)
     plt.savefig(os.path.join(output_dir, f"result-{i}.png"))
+
+# Create text file containing model weights path
+with open(os.path.join(output_dir, "model_weights.txt"), "w") as f:
+    f.write(args.weights_dir)
