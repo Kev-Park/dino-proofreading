@@ -172,7 +172,7 @@ class TerminationClassifier(nn.Module):
         image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
         return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
-    def run_train(self, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
+    def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         #criterion = nn.MSELoss()
@@ -186,6 +186,11 @@ class TerminationClassifier(nn.Module):
 
         # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
+
+        # If using validation loss
+        if validate_dir is not None:
+            val_images_tensor, val_heatmaps_tensor =  self.load_dataset(image_path=validate_dir)
+            val_n = val_images_tensor.shape[0]
 
         # Train
         for epoch in range(num_epochs):
@@ -211,7 +216,7 @@ class TerminationClassifier(nn.Module):
                 #loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
-                loss = 1.0 * criterion(logits, batch_heatmaps) + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
+                loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -221,7 +226,29 @@ class TerminationClassifier(nn.Module):
                 print(f"  Batch {i // batch_size + 1} - Loss: {loss.item():.4f}",flush=True)
             
             avg_loss = total_loss / (n // batch_size)
-            print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training",flush=True)
+
+            # Calculate validation loss if applicable
+            if validate_dir is not None:
+                val_loss = 0.0
+                
+                with torch.no_grad():
+                    for j in range(0, val_n, batch_size):
+                        val_batch_images = val_images_tensor[j:j + batch_size]
+                        val_batch_heatmaps = val_heatmaps_tensor[j:j + batch_size]
+
+                        val_batch_features = self.embed(val_batch_images)
+
+                        val_batch_features = val_batch_features.to(self.device)
+                        val_batch_heatmaps = val_batch_heatmaps.to(self.device)
+
+                        val_logits = self.forward(val_batch_features)
+                        v_loss = criterion(val_logits, val_batch_heatmaps)
+                        val_loss += v_loss.item()
+
+                val_loss /= (val_n // batch_size)
+                print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, Validation Loss: {val_loss:.4f}, end training",flush=True)
+            else:
+                print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, end training",flush=True)
 
             if (epoch+1) % save_rate == 0:
                 save_path = os.path.join(output_dir, f"model_epoch_{epoch + 1}.pth")
