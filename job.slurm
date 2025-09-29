@@ -19,4 +19,4 @@ pip install -e .
 ##python -c "import torch; print(torch.version.cuda)"
 ##nvidia-smi
 
-python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512" --validate_dir "./screenshots/VALIDATE_DATASETS/validate_1_512" --lr 0.0001 --epochs 30 --save_rate 5
+python dinoproof/train.py --input_dir "./screenshots/TRAIN_DATASETS/raw_1_false_positive_augmented_512" --validate_dir "./screenshots/VALIDATE_DATASETS/validate_1_512" --lr 0.0001 --epochs 100 --save_rate 5
