@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="dino-proofreading")
 parser.add_argument("--input_dir", type=str, required=True)
-parser.add_argument("--validate_dir", type=str, required=False)
+parser.add_argument("--validate_dir", type=str, default=None)
 parser.add_argument("--epochs", type=int, default=10)
 parser.add_argument("--lr", type=float, default=0.001)
 parser.add_argument("--batch_size", type=int, default=4)
