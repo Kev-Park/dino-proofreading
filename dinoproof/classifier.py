@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import os
 from torchvision import transforms
+from torchvision.ops import sigmoid_focal_loss
 from torch.nn.functional import interpolate
 import torch.nn.functional as F
 from PIL import Image
@@ -69,7 +70,7 @@ class TerminationClassifier(nn.Module):
         Generate a heatmap from a list of (x, y) points using Gaussians.
         """
 
-        sigma = 5
+        sigma = 2#5
 
         heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
@@ -92,6 +93,9 @@ class TerminationClassifier(nn.Module):
                 # Filter out values smaller than threshold
                 threshold = 0.01
                 heatmap[heatmap < threshold] = 0
+
+                # TEMPORARY RAISE VALUES TO 1
+                heatmap[heatmap > 0] = 1.0
 
         return torch.tensor(heatmap)
 
@@ -175,7 +179,7 @@ class TerminationClassifier(nn.Module):
     def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         #criterion = nn.MSELoss()
-        criterion = nn.BCEWithLogitsLoss()
+        #criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -215,7 +219,9 @@ class TerminationClassifier(nn.Module):
                 #loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
-                loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
+                #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
+                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
+
 
                 optimizer.zero_grad()
                 loss.backward()
