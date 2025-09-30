@@ -221,7 +221,7 @@ class TerminationClassifier(nn.Module):
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
                 #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
-                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
+                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.50, gamma=3.0, reduction='mean')
 
 
                 optimizer.zero_grad()
