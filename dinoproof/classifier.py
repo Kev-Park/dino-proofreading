@@ -247,7 +247,8 @@ class TerminationClassifier(nn.Module):
                         val_batch_heatmaps = val_batch_heatmaps.to(self.device)
 
                         val_logits = self.forward(val_batch_features)
-                        v_loss = criterion(val_logits, val_batch_heatmaps)
+                        #v_loss = criterion(val_logits, val_batch_heatmaps)
+                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
                         val_loss += v_loss.item()
 
                 val_loss /= (val_n // batch_size)
