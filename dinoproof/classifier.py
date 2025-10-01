@@ -33,8 +33,8 @@ class TerminationClassifier(nn.Module):
 
         # Linear
         self.model = nn.Sequential(
-            nn.Conv2d(self.embedding_dim, 64, kernel_size=3, padding=1, bias=True), 
-            #nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
+            nn.Conv2d(self.embedding_dim, 128, kernel_size=3, padding=1, bias=True), 
+            nn.Conv2d(128, 64, kernel_size=3, padding=1, bias=True), 
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
             nn.Conv2d(32, 1, kernel_size=1, bias=True)
         )
@@ -221,7 +221,7 @@ class TerminationClassifier(nn.Module):
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
                 #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
-                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.75, gamma=2.0, reduction='mean')
+                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
 
 
                 optimizer.zero_grad()
