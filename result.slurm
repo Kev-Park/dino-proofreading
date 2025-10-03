@@ -16,4 +16,4 @@ module load anacondapy/2024.02
 conda activate dino-proofreading
 pip install -e .
 
-python dinoproof/inference.py --input_dir "./screenshots/TEST_DATASETS/temp_subset" --weights_dir "./weights/2025-10-01-19-22-03/model_epoch_100.pth"
+python dinoproof/inference.py --input_dir "./screenshots/TEST_DATASETS/temp_subset" --weights_dir "./weights/2025-10-03-11-04-07/model_epoch_100.pth"
