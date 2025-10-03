@@ -70,7 +70,7 @@ class TerminationClassifier(nn.Module):
         Generate a heatmap from a list of (x, y) points using Gaussians.
         """
 
-        sigma = 2#5
+        sigma = 5
 
         heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
@@ -94,8 +94,6 @@ class TerminationClassifier(nn.Module):
                 threshold = 0.01
                 heatmap[heatmap < threshold] = 0
 
-                # TEMPORARY RAISE VALUES TO 1
-                heatmap[heatmap > 0] = 1.0
 
         return torch.tensor(heatmap)
 
