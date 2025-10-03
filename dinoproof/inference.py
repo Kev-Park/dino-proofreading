@@ -34,7 +34,7 @@ os.makedirs(output_dir, exist_ok=True)
 with torch.no_grad():
     model_heatmap = classifier.forward(features)
     # Apply sigmoid to get probabilities
-    model_heatmap = torch.sigmoid(model_heatmap)
+   # model_heatmap = torch.sigmoid(model_heatmap)
 model_heatmap = model_heatmap.cpu().squeeze()
 images = images.cpu()
 
