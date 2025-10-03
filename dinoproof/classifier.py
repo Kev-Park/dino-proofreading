@@ -219,7 +219,10 @@ class TerminationClassifier(nn.Module):
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
                 #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
-                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.75, gamma=2.0, reduction='mean')
+                
+                # Penalize uniform high confidence
+                sparsity_loss = torch.sigmoid(batch_heatmaps).mean()
+                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.75, gamma=2.0, reduction='mean') + 0.001 * sparsity_loss
 
 
                 optimizer.zero_grad()
@@ -247,7 +250,9 @@ class TerminationClassifier(nn.Module):
 
                         val_logits = self.forward(val_batch_features)
                         #v_loss = criterion(val_logits, val_batch_heatmaps)
-                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.75, gamma=2.0, reduction='mean')
+
+                        v_sparsity_loss = torch.sigmoid(val_batch_heatmaps).mean()
+                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.75, gamma=2.0, reduction='mean') + 0.001 * v_sparsity_loss
                         val_loss += v_loss.item()
 
                 val_loss /= (val_n // batch_size)
