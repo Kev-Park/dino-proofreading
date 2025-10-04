@@ -27,6 +27,8 @@ all_images, _ = classifier.load_image(image_path=args.input_dir, generate_heatma
 # Save results
 output_dir = "results/" + time.strftime("%Y-%m-%d-%H-%M-%S")
 os.makedirs(output_dir, exist_ok=True)
+with open(os.path.join(output_dir, "model_weights.txt"), "w") as f:
+    f.write(args.weights_dir)
 
 # Operate over batches of 4 images
 for i in range(0, len(all_images), 4):
@@ -48,11 +50,11 @@ for i in range(0, len(all_images), 4):
     # real_heatmap = classifier.generate_heatmap(classifier.extract_points(f"./screenshots/{dataset_name}/{test_file}.csv"))
 
     print("Saving results",flush=True)
-    for i in range(len(model_heatmap)):
+    for j in range(len(model_heatmap)):
 
         plt.figure(figsize=(10, 5),layout='constrained')
         ax1 = plt.subplot(1, 2, 1)
-        img = images[i].permute(1, 2, 0)
+        img = images[j].permute(1, 2, 0)
 
 
         ax1.imshow(img)
@@ -63,7 +65,7 @@ for i in range(0, len(all_images), 4):
 
         ax2 = plt.subplot(1, 2, 2)
         ax2.imshow(img)
-        img_heat = ax2.imshow(model_heatmap[i], alpha=0.5, cmap="jet")
+        img_heat = ax2.imshow(model_heatmap[j], alpha=0.5, cmap="jet")
         ax2.set_title("Model Predicted Heatmap")
         ax2.set_xticks(np.linspace(0, img.shape[1], 5))
         ax2.set_yticks(np.linspace(0, img.shape[0], 5))
@@ -71,9 +73,5 @@ for i in range(0, len(all_images), 4):
         cbar1 = plt.colorbar(img_heat)
         cbar1.set_label("Heatmap Intensity")
 
-        plt.suptitle(f"Test {i}", fontsize=16)
-        plt.savefig(os.path.join(output_dir, f"result-{i}.png"))
-
-    # Create text file containing model weights path
-    with open(os.path.join(output_dir, "model_weights.txt"), "w") as f:
-        f.write(args.weights_dir)
+        plt.suptitle(f"Test {4*i+j}", fontsize=16)
+        plt.savefig(os.path.join(output_dir, f"result-{4*i+ j}.png"))
