@@ -34,13 +34,23 @@ class TerminationClassifier(nn.Module):
         # Linear
         self.model = nn.Sequential(
             nn.Conv2d(self.embedding_dim, 256, kernel_size=5, padding=2, bias=True), 
-            nn.ReLU(inplace=True),
+            #nn.ReLU(inplace=True),
             nn.Conv2d(256, 64, kernel_size=3, padding=1, bias=True), 
-            nn.ReLU(inplace=True),
+            #nn.ReLU(inplace=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 1, kernel_size=1, bias=True)
+            #nn.ReLU(inplace=True),
+            nn.Conv2d(32, 1, kernel_size=1, bias=True),
+            nn.Sigmoid()
         )
+        # self.model = nn.Sequential(
+        #     nn.Conv2d(self.embedding_dim, 256, kernel_size=5, padding=2, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(256, 64, kernel_size=3, padding=1, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
+        #     nn.ReLU(inplace=True),
+        #     nn.Conv2d(32, 1, kernel_size=1, bias=True)
+        # )
         
         # Decoder
         # self.model = nn.Sequential(
@@ -73,7 +83,8 @@ class TerminationClassifier(nn.Module):
         Generate a heatmap from a list of (x, y) points using Gaussians.
         """
 
-        sigma = 5
+        # sigma = 5
+        radius = 3
 
         heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
@@ -81,22 +92,33 @@ class TerminationClassifier(nn.Module):
             x = int(round(x))
             y = int(round(y))
             if 0 <= x < self.image_size and 0 <= y < self.image_size:
-                # Create a grid of coordinates
-                xv, yv = np.meshgrid(np.arange(self.image_size), np.arange(self.image_size))
-
-                # Calculate squared distance from the point
-                dist_sq = (xv - x) ** 2 + (yv - y) ** 2
-
-                # Compute Gaussian
-                gauss = np.exp(-dist_sq / (2 * sigma ** 2))
-
-                # Combine with existing heatmap (supports multiple points)
-                heatmap = np.maximum(heatmap, gauss)
+                # Create a circular region of value 1 around the point
+                y_min = max(0, y - radius)
+                y_max = min(self.image_size, y + radius + 1)
+                x_min = max(0, x - radius)
+                x_max = min(self.image_size, x + radius + 1)
                 
-                # Filter out values smaller than threshold
-                threshold = 0.01
-                heatmap[heatmap < threshold] = 0
+                # Create circular mask
+                for yy in range(y_min, y_max):
+                    for xx in range(x_min, x_max):
+                        if (xx - x) ** 2 + (yy - y) ** 2 <= radius ** 2:
+                            heatmap[yy, xx] = 1.0
+                
+                # # Create a grid of coordinates
+                # xv, yv = np.meshgrid(np.arange(self.image_size), np.arange(self.image_size))
 
+                # # Calculate squared distance from the point
+                # dist_sq = (xv - x) ** 2 + (yv - y) ** 2
+
+                # # Compute Gaussian
+                # gauss = np.exp(-dist_sq / (2 * sigma ** 2))
+
+                # # Combine with existing heatmap (supports multiple points)
+                # heatmap = np.maximum(heatmap, gauss)
+                
+                # # Filter out values smaller than threshold
+                # threshold = 0.01
+                # heatmap[heatmap < threshold] = 0
 
         return torch.tensor(heatmap)
 
@@ -181,7 +203,7 @@ class TerminationClassifier(nn.Module):
     def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
         #criterion = nn.MSELoss()
-        #criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([769.0]).to(self.device))
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -218,11 +240,13 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
+                loss = criterion(logits, batch_heatmaps)
+
                 #loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
                 #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
                 #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
                 #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
-                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
+                #loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.99, gamma=2.0, reduction='mean')
 
 
                 optimizer.zero_grad()
@@ -251,8 +275,8 @@ class TerminationClassifier(nn.Module):
                         val_logits = self.forward(val_batch_features)
                         #v_loss = criterion(val_logits, val_batch_heatmaps)
 
-                        
-                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
+                        v_loss = criterion(val_logits, val_batch_heatmaps)
+                        #v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
                         val_loss += v_loss.item()
 
                 val_loss /= (val_n // batch_size)

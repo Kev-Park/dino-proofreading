@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 import os
-from torch.nn.functional import interpolate
-from PIL import Image
 import argparse
 
 # Parse CMD-line args
@@ -36,13 +34,10 @@ for i in range(0, len(all_images), 4):
 
     images = torch.stack(images).to(classifier.device)
     features = classifier.embed(images)
-    heatmaps = classifier.forward(features)
 
     # Get model heatmap
     with torch.no_grad():
         model_heatmap = classifier.forward(features)
-        # Apply sigmoid to get probabilities
-        model_heatmap = torch.sigmoid(model_heatmap)
     model_heatmap = model_heatmap.cpu().squeeze()
     images = images.cpu()
 
