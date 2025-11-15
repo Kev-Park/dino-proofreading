@@ -208,8 +208,10 @@ class TerminationClassifier(nn.Module):
 
     def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        #criterion = nn.MSELoss()
-        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([20.0]).to(self.device))
+
+        # Focal loss parameters
+        alpha = 0.95
+        gamma = 3.0
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -246,17 +248,11 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = criterion(logits, batch_heatmaps)
-
-                #loss = (1-self.logit_alpha)*criterion(logits, batch_heatmaps)  + self.logit_alpha*F.mse_loss(logits, batch_heatmaps.float())
-                #multiplier = 0.9 - 0.4 * ((epoch+1)/ num_epochs)
-                #loss = multiplier * criterion(logits, batch_heatmaps) + (1 - multiplier) * F.mse_loss(logits, batch_heatmaps.float())
-                #loss = 1.0 * criterion(logits, batch_heatmaps)# + 0.0 * F.mse_loss(logits, batch_heatmaps.float())
-                #loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=0.99, gamma=2.0, reduction='mean')
-
+                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=alpha, gamma=gamma, reduction='mean')
 
                 optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.parameters(), max_norm=1.0)
                 optimizer.step()
 
                 total_loss += loss.item()
@@ -280,10 +276,7 @@ class TerminationClassifier(nn.Module):
                         val_batch_heatmaps = val_batch_heatmaps.to(self.device)
 
                         val_logits = self.forward(val_batch_features)
-                        #v_loss = criterion(val_logits, val_batch_heatmaps)
-
-                        v_loss = criterion(val_logits, val_batch_heatmaps)
-                        #v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
+                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=alpha, gamma=gamma, reduction='mean')
                         val_loss += v_loss.item()
                 self.train()
                 val_loss /= (val_n // batch_size)
