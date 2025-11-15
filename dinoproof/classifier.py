@@ -7,7 +7,6 @@ from torchvision.ops import sigmoid_focal_loss
 from torch.nn.functional import interpolate
 import torch.nn.functional as F
 from PIL import Image
-import csv
 
 class TerminationClassifier(nn.Module):
     def __init__(self):
@@ -16,7 +15,7 @@ class TerminationClassifier(nn.Module):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.patch_size = 16 # Default
         self.embedding_dim = 384 # 384, 768, 1024, 1280, or 4096
-        self.image_size = 392#512  # Size of the input images
+        self.image_size = 384#512  # Size of the input images
         self.dino = None
 
         # Learned weighting of loss terms
@@ -74,19 +73,12 @@ class TerminationClassifier(nn.Module):
         Extract (x, y) points from a CSV file.
         """
 
-        points = []
-        original_size = 512
-        scale_factor = self.image_size / original_size
-        
-        with open(csv_path, 'r') as f:
-            reader = csv.reader(f)
-            next(reader)
-            for row in reader:
-                x, y = float(row[0]), float(row[1])
-                x_scaled = x * scale_factor
-                y_scaled = y * scale_factor
-                points.append((x_scaled, y_scaled))
-        return points
+        try:
+            data = np.loadtxt(csv_path, delimiter=',', skiprows=1)
+        except:
+            # Return empty array if file not found or empty
+            data = np.empty((0, 2))
+        return data*(self.image_size / 512)
 
     def generate_heatmap(self, points):
         """
