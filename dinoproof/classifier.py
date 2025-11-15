@@ -68,7 +68,7 @@ class TerminationClassifier(nn.Module):
         # Load DINOv3 B16 (76M)
         #self.dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg').to(self.device)
 
-    def extract_points(self, csv_path):
+    def extract_points(self, csv_path, dataset_size=None):
         """
         Extract (x, y) points from a CSV file.
         """
@@ -78,7 +78,12 @@ class TerminationClassifier(nn.Module):
         except:
             # Return empty array if file not found or empty
             data = np.empty((0, 2))
-        return data*(self.image_size / 512)
+
+        # potentially augment data to match image size
+        if dataset_size is not None:
+            scale_factor = self.image_size / dataset_size
+            data = data * scale_factor
+        return data
 
     def generate_heatmap(self, points):
         """
@@ -124,7 +129,7 @@ class TerminationClassifier(nn.Module):
 
         return torch.tensor(heatmap)
 
-    def load_image(self, image_path, generate_heatmap = False, normalize = True):
+    def load_image(self, image_path, generate_heatmap = False, normalize = True, dataset_size = None):
         """
         Load a single image or a directory of images and convert them to tensors.
 
@@ -161,7 +166,7 @@ class TerminationClassifier(nn.Module):
 
             if generate_heatmap:
                 csv_path = image_path.rsplit('.', 1)[0] + ".csv"
-                points = self.extract_points(csv_path)
+                points = self.extract_points(csv_path, dataset_size=dataset_size)
                 heatmap_tensor = self.generate_heatmap(points)
                 heatmap_tensors.append(heatmap_tensor)
         return image_tensors, heatmap_tensors
@@ -205,8 +210,10 @@ class TerminationClassifier(nn.Module):
         """
         Load dataset of images and corresponding heatmaps.
         """
+        # Get size from last 3 indexes of image_path string
+        dataset_size = int(image_path[-3:])
 
-        image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True)
+        image_tensors, heatmap_tensors = self.load_image(image_path=image_path, generate_heatmap=True, dataset_size=dataset_size)
         return torch.stack(image_tensors).to(self.device), torch.stack(heatmap_tensors).to(self.device)
 
     def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
@@ -216,7 +223,7 @@ class TerminationClassifier(nn.Module):
         criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([700.0]).to(self.device))
 
         # Obtain training data
-        images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
+        images_tensor, heatmaps_tensor = self.load_dataset(image_path=input_dir)
 
         # Get number of samples
         n = images_tensor.shape[0]
@@ -226,7 +233,7 @@ class TerminationClassifier(nn.Module):
 
         # If using validation loss
         if validate_dir is not None:
-            val_images_tensor, val_heatmaps_tensor =  self.load_dataset(image_path=validate_dir)
+            val_images_tensor, val_heatmaps_tensor = self.load_dataset(image_path=validate_dir)
             val_n = val_images_tensor.shape[0]
 
         # Train
