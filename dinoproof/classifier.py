@@ -220,7 +220,7 @@ class TerminationClassifier(nn.Module):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
 
         # BCE with heavy pos_weight for 700:1 class imbalance
-        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([700.0]).to(self.device))
+        criterion = nn.BCEWithLogitsLoss()
 
         # Obtain training data
         images_tensor, heatmaps_tensor = self.load_dataset(image_path=input_dir)
