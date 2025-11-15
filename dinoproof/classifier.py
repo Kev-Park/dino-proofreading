@@ -209,9 +209,8 @@ class TerminationClassifier(nn.Module):
     def run_train(self, validate_dir, output_dir, input_dir, num_epochs=10, learning_rate=0.0001, batch_size=4, save_rate=10):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
 
-        # Focal loss parameters
-        alpha = 0.99
-        gamma = 2
+        # BCE with heavy pos_weight for 700:1 class imbalance
+        criterion = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([700.0]).to(self.device))
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
@@ -248,7 +247,7 @@ class TerminationClassifier(nn.Module):
                 batch_heatmaps = batch_heatmaps.to(self.device)
 
                 logits = self.forward(batch_features)
-                loss = sigmoid_focal_loss(logits, batch_heatmaps, alpha=alpha, gamma=gamma, reduction='mean')
+                loss = criterion(logits, batch_heatmaps)
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -276,7 +275,7 @@ class TerminationClassifier(nn.Module):
                         val_batch_heatmaps = val_batch_heatmaps.to(self.device)
 
                         val_logits = self.forward(val_batch_features)
-                        v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=alpha, gamma=gamma, reduction='mean')
+                        v_loss = criterion(val_logits, val_batch_heatmaps)
                         val_loss += v_loss.item()
                 self.train()
                 val_loss /= (val_n // batch_size)
