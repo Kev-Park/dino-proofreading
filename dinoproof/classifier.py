@@ -173,6 +173,7 @@ class TerminationClassifier(nn.Module):
 
         if self.dino is None:
             self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vits16plus', weights='https://dinov3.llamameta.net/dinov3_vits16plus/dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth?Policy=eyJTdGF0ZW1lbnQiOlt7InVuaXF1ZV9oYXNoIjoiYzJ6b3B4N3h1dHM2bWZuZzQyNjltOW1mIiwiUmVzb3VyY2UiOiJodHRwczpcL1wvZGlub3YzLmxsYW1hbWV0YS5uZXRcLyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTk0Mjk4NDJ9fX1dfQ__&Signature=CH8s%7EpnpNNGuT86F0nH21vr6avfystqlXxpJFDQTcQ2AV34HummS5T7RtXnZ0zyislma%7Ef%7Efb8zklTwBM7Xv324HsG2PE1zr%7E8O1urzURQcWzHwI4HsalQoQhw%7EWRLu8wnLBK0%7EX6PzGyPFyxjHgmBVOELTnUAfl3gfpIjwrvBM6EaZfXKVT6oea0%7EzaGXlqgjheMskxd8YLvbKA6ZkNY4K0fqu5BinEFMwKMBcRsibpjE-yXu7nVPMegU58G-1V6F2LpGrOMCNy%7Eetqvg7GVx%7EIcPTfCJLK-v2b-NV1HwfHNaL1E5jIaXulXXzf-mEyxoyuR-DWm%7EoUitoz1qvOlg__&Key-Pair-Id=K15QRJLYKIFSLZ&Download-Request-ID=795646836662285').eval().to(self.device)        
+            #self.dino = torch.hub.load('facebookresearch/dinov2', 'dinov2_vits14_reg').eval().to(self.device)
 
         with torch.no_grad():
             output = self.dino.forward_features(image_tensors_batch)
