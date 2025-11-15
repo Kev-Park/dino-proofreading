@@ -38,6 +38,8 @@ for i in range(0, len(all_images), 4):
     # Get model heatmap
     with torch.no_grad():
         model_heatmap = classifier.forward(features)
+        # Necessary if model doesn't have sigmoid at the end
+        model_heatmap = torch.sigmoid(model_heatmap)
     model_heatmap = model_heatmap.cpu().squeeze()
     images = images.cpu()
 

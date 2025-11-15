@@ -39,8 +39,8 @@ class TerminationClassifier(nn.Module):
             #nn.ReLU(inplace=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
             #nn.ReLU(inplace=True),
-            nn.Conv2d(32, 1, kernel_size=1, bias=True),
-            nn.Sigmoid()
+            nn.Conv2d(32, 1, kernel_size=1, bias=True)
+            #nn.Sigmoid()
         )
         # self.model = nn.Sequential(
         #     nn.Conv2d(self.embedding_dim, 256, kernel_size=5, padding=2, bias=True), 
@@ -266,6 +266,7 @@ class TerminationClassifier(nn.Module):
 
             # Calculate validation loss if applicable
             if validate_dir is not None:
+                self.eval()
                 val_loss = 0.0
                 
                 with torch.no_grad():
@@ -284,7 +285,7 @@ class TerminationClassifier(nn.Module):
                         v_loss = criterion(val_logits, val_batch_heatmaps)
                         #v_loss = sigmoid_focal_loss(val_logits, val_batch_heatmaps, alpha=0.25, gamma=2.0, reduction='mean')
                         val_loss += v_loss.item()
-
+                self.train()
                 val_loss /= (val_n // batch_size)
                 print(f"Epoch {epoch + 1} Average Loss: {avg_loss:.4f}, Validation Loss: {val_loss:.4f}, end training",flush=True)
             else:
