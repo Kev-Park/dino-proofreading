@@ -170,24 +170,30 @@ class TerminationClassifier(nn.Module):
         """
 
         if self.dino is None:
-            #self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vitb16', weights='dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth').eval().to(self.device)        
             self.dino = torch.hub.load(repo_or_dir='facebookresearch/dinov3', model='dinov3_vits16plus', weights='https://dinov3.llamameta.net/dinov3_vits16plus/dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth?Policy=eyJTdGF0ZW1lbnQiOlt7InVuaXF1ZV9oYXNoIjoiYzJ6b3B4N3h1dHM2bWZuZzQyNjltOW1mIiwiUmVzb3VyY2UiOiJodHRwczpcL1wvZGlub3YzLmxsYW1hbWV0YS5uZXRcLyoiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTk0Mjk4NDJ9fX1dfQ__&Signature=CH8s%7EpnpNNGuT86F0nH21vr6avfystqlXxpJFDQTcQ2AV34HummS5T7RtXnZ0zyislma%7Ef%7Efb8zklTwBM7Xv324HsG2PE1zr%7E8O1urzURQcWzHwI4HsalQoQhw%7EWRLu8wnLBK0%7EX6PzGyPFyxjHgmBVOELTnUAfl3gfpIjwrvBM6EaZfXKVT6oea0%7EzaGXlqgjheMskxd8YLvbKA6ZkNY4K0fqu5BinEFMwKMBcRsibpjE-yXu7nVPMegU58G-1V6F2LpGrOMCNy%7Eetqvg7GVx%7EIcPTfCJLK-v2b-NV1HwfHNaL1E5jIaXulXXzf-mEyxoyuR-DWm%7EoUitoz1qvOlg__&Key-Pair-Id=K15QRJLYKIFSLZ&Download-Request-ID=795646836662285').eval().to(self.device)        
 
         with torch.no_grad():
             output = self.dino.forward_features(image_tensors_batch)
         raw_feature_grid = output["x_norm_patchtokens"]
-        B, _, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
-        patch_count=int(self.image_size/self.patch_size)
-        raw_feature_grid = raw_feature_grid.reshape(B, patch_count, patch_count, C)  # [Batch size, height, width, feature dimension]
+        B, N, C = raw_feature_grid.shape  # B: batch size, N: number of patches, C: feature dimension
+        
+        patch_count = int(self.image_size / self.patch_size)
+        
+        # Verify the number of patches matches expected grid size
+        assert N == patch_count * patch_count, f"Expected {patch_count * patch_count} patches, got {N}"
+        
+        # Reshape: [B, N, C] -> [B, patch_h, patch_w, C]
+        raw_feature_grid = raw_feature_grid.reshape(B, patch_count, patch_count, C)
 
-        #return raw_feature_grid.permute(0, 3, 1, 2)  # Rearrange to [Batch size, feature_dim, patch_h, patch_w]
-
-        #compute per-point feature using bilinear interpolation
-        interpolated_feature_grid = interpolate(raw_feature_grid.permute(0, 3, 1, 2),  # Rearrange [Batch size, feature_dim, patch_h, patch_w]
-                                                size=(self.image_size, self.image_size),
-                                                mode='bilinear')
-        batch_features = interpolated_feature_grid
-        return batch_features
+        # Permute to [B, C, patch_h, patch_w] for interpolation
+        interpolated_feature_grid = interpolate(
+            raw_feature_grid.permute(0, 3, 1, 2),
+            size=(self.image_size, self.image_size),
+            mode='bilinear',
+            align_corners=False  # Good practice for bilinear interpolation
+        )
+        
+        return interpolated_feature_grid
 
     def forward(self, feature_grid):
         return self.model(feature_grid).squeeze(1)
