@@ -32,16 +32,25 @@ class TerminationClassifier(nn.Module):
         # )
 
         # Linear
+        # self.model = nn.Sequential(
+        #     nn.Conv2d(self.embedding_dim, 256, kernel_size=7, padding=3, bias=True), 
+        #     #nn.ReLU(),
+        #     nn.Conv2d(256, 64, kernel_size=5, padding=2, bias=True), 
+        #     #nn.ReLU(),
+        #     nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
+        #     #nn.ReLU(),
+        #     nn.Conv2d(32, 1, kernel_size=1, bias=True)
+        #     #nn.Sigmoid()
+        # )
         self.model = nn.Sequential(
-            nn.Conv2d(self.embedding_dim, 256, kernel_size=7, padding=3, bias=True), 
-            #nn.ReLU(inplace=True),
-            nn.Conv2d(256, 64, kernel_size=5, padding=2, bias=True), 
-            #nn.ReLU(inplace=True),
-            nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
-            #nn.ReLU(inplace=True),
-            nn.Conv2d(32, 1, kernel_size=1, bias=True)
-            #nn.Sigmoid()
+            nn.Conv2d(self.embedding_dim, 64, kernel_size=7, padding=3),  # Local context
+            nn.ReLU(),
+            nn.Conv2d(64, 32, kernel_size=5, padding=2),
+            nn.ReLU(),
+            nn.Conv2d(32, 1, kernel_size=1)  # Final output logits
         )
+
+
         # self.model = nn.Sequential(
         #     nn.Conv2d(self.embedding_dim, 256, kernel_size=5, padding=2, bias=True), 
         #     nn.ReLU(inplace=True),
