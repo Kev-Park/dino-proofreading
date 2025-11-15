@@ -13,7 +13,7 @@ class TerminationClassifier(nn.Module):
         super().__init__()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.patch_size = 16 # Default
+        self.patch_size = 14 # Default
         self.embedding_dim = 384 # 384, 768, 1024, 1280, or 4096
         self.image_size = 392#512  # Size of the input images
         self.dino = None
