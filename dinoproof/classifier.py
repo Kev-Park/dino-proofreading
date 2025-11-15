@@ -33,9 +33,9 @@ class TerminationClassifier(nn.Module):
 
         # Linear
         self.model = nn.Sequential(
-            nn.Conv2d(self.embedding_dim, 256, kernel_size=5, padding=2, bias=True), 
+            nn.Conv2d(self.embedding_dim, 256, kernel_size=7, padding=3, bias=True), 
             #nn.ReLU(inplace=True),
-            nn.Conv2d(256, 64, kernel_size=3, padding=1, bias=True), 
+            nn.Conv2d(256, 64, kernel_size=5, padding=2, bias=True), 
             #nn.ReLU(inplace=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=True), 
             #nn.ReLU(inplace=True),
@@ -84,7 +84,7 @@ class TerminationClassifier(nn.Module):
         """
 
         # sigma = 5
-        radius = 3
+        radius = 6
 
         heatmap = np.zeros((self.image_size, self.image_size), dtype=np.float32)
 
@@ -210,8 +210,8 @@ class TerminationClassifier(nn.Module):
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
 
         # Focal loss parameters
-        alpha = 0.95
-        gamma = 3.0
+        alpha = 0.99
+        gamma = 2
 
         # Obtain training data
         images_tensor, heatmaps_tensor =  self.load_dataset(image_path=input_dir)
